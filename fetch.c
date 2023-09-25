@@ -1,6 +1,6 @@
 /*	$NetBSD: fetch.c,v 1.19 2009/08/11 20:48:06 joerg Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * Copyright (c) 2008 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -32,9 +32,6 @@
 
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif
-#ifndef NETBSD
-#include <nbcompat.h>
 #endif
 
 #include <ctype.h>

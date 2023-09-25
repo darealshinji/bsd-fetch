@@ -1,6 +1,6 @@
 /*	$NetBSD: ftp.c,v 1.47 2019/02/11 10:34:36 wiz Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * Copyright (c) 2008, 2009, 2010 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -42,7 +42,7 @@
  *
  * Major Changelog:
  *
- * Dag-Erling Coïdan Smørgrav
+ * Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * 9 Jun 1998
  *
  * Incorporated into libfetch
@@ -57,16 +57,8 @@
  *
  */
 
-#ifdef __linux__
-/* Keep this down to Linux, it can create surprises else where. */
-#define _GNU_SOURCE
-#endif
-
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif
-#ifndef NETBSD
-#include <nbcompat.h>
 #endif
 
 #include <sys/types.h>
@@ -82,13 +74,8 @@
 #include <inttypes.h>
 #endif
 #include <stdarg.h>
-#ifndef NETBSD
-#include <nbcompat/netdb.h>
-#include <nbcompat/stdio.h>
-#else
 #include <netdb.h>
 #include <stdio.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

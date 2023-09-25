@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2000-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2000-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,9 +28,6 @@
 
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif
-#ifndef NETBSD
-#include <nbcompat.h>
 #endif
 
 #if HAVE_SYS_PARAM_H
@@ -163,7 +160,7 @@ struct xferstat {
 static const char *
 stat_eta(struct xferstat *xs)
 {
-	static char str[16];
+	static char str[32];
 	long elapsed, eta;
 	off_t received, expected;
 
@@ -187,7 +184,7 @@ static const char *prefixes = " kMGTP";
 static const char *
 stat_bytes(off_t bytes)
 {
-	static char str[16];
+	static char str[32];
 	const char *prefix = prefixes;
 
 	while (bytes > 9999 && prefix[1] != '\0') {
@@ -204,7 +201,7 @@ stat_bytes(off_t bytes)
 static const char *
 stat_bps(struct xferstat *xs)
 {
-	static char str[16];
+	static char str[128];
 	double delta, bps;
 
 	delta = (xs->last.tv_sec + (xs->last.tv_usec / 1.e6))

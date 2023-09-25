@@ -1,6 +1,6 @@
 /*	$NetBSD: http.c,v 1.42 2022/08/23 17:48:53 wiz Exp $	*/
 /*-
- * Copyright (c) 2000-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2000-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * Copyright (c) 2003 Thomas Klausner <wiz@NetBSD.org>
  * Copyright (c) 2008, 2009 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
@@ -63,23 +63,11 @@
  * SUCH DAMAGE.
  */
 
-#if defined(__linux__) || defined(__MINT__) || defined(__FreeBSD_kernel__)
-/* Keep this down to Linux or MiNT, it can create surprises elsewhere. */
-/*
-   __FreeBSD_kernel__ is defined for GNU/kFreeBSD.
-   See http://glibc-bsd.alioth.debian.org/porting/PORTING .
-*/
-#define _GNU_SOURCE
-#endif
-
 /* Needed for gmtime_r on Interix */
 #define _REENTRANT
 
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif
-#ifndef NETBSD
-#include <nbcompat.h>
 #endif
 
 #include <sys/types.h>
@@ -89,11 +77,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <stdarg.h>
-#ifndef NETBSD
-#include <nbcompat/stdio.h>
-#else
 #include <stdio.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -102,11 +86,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#ifndef NETBSD
-#include <nbcompat/netdb.h>
-#else
 #include <netdb.h>
-#endif
 
 #include <arpa/inet.h>
 
