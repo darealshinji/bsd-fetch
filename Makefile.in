@@ -1,0 +1,34 @@
+CC=			@CC@
+CFLAGS=		-Wall -Wno-unused-result -I. @CFLAGS@
+CPPFLAGS=	@CPPFLAGS@ -DHAVE_CONFIG_H
+LDFLAGS=	@LDFLAGS@
+LIBS=		@LIBS@
+
+OBJS=		fetch.o common.o ftp.o http.o file.o main.o
+PROG=		fetch
+
+
+all: $(PROG)
+
+clean:
+	-rm -f *.o $(PROG) ftperr.h httperr.h
+
+distclean: clean
+	-rm -f Makefile config.log config.status config.h
+
+maintainer-clean: distclean
+	-rm -rf autom4te.cache
+	-rm -f config.guess config.sub config.h.in config.h.in~ configure configure~
+
+$(PROG): $(OBJS)
+	$(CC) -o $(PROG) $^ $(LDFLAGS) $(LIBS)
+
+ftp.o: ftperr.h
+http.o: httperr.h
+
+ftperr.h:
+	$(SHELL) errlist.sh ftp_errlist FTP ftp.errors > $@
+
+httperr.h:
+	$(SHELL) errlist.sh http_errlist HTTP http.errors > $@
+
