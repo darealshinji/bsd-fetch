@@ -29,6 +29,9 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
+//#ifndef NETBSD
+//#include <nbcompat.h>
+//#endif
 
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
