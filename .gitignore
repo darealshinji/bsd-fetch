@@ -1,0 +1,17 @@
+*.o
+*~
+
+fetch
+ftperr.h
+httperr.h
+
+Makefile
+config.guess
+config.sub
+config.status
+config.log
+config.h
+config.h.in
+
+autom4te.cache
+configure
