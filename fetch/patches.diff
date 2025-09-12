@@ -1,0 +1,31 @@
+Use larger buffers to prevent truncation.
+
+--- a/fetch/fetch.c
++++ b/fetch/fetch.c
+@@ -163,7 +163,7 @@ struct xferstat {
+ static const char *
+ stat_eta(struct xferstat *xs)
+ {
+-	static char str[16];
++	static char str[32];
+ 	long elapsed, eta;
+ 	off_t received, expected;
+ 
+@@ -187,7 +187,7 @@ static const char *prefixes = " kMGTP";
+ static const char *
+ stat_bytes(off_t bytes)
+ {
+-	static char str[16];
++	static char str[32];
+ 	const char *prefix = prefixes;
+ 
+ 	while (bytes > 9999 && prefix[1] != '\0') {
+@@ -204,7 +204,7 @@ stat_bytes(off_t bytes)
+ static const char *
+ stat_bps(struct xferstat *xs)
+ {
+-	static char str[16];
++	static char str[48];
+ 	double delta, bps;
+ 
+ 	delta = (xs->last.tv_sec + (xs->last.tv_usec / 1.e6))

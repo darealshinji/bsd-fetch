@@ -1,7 +1,7 @@
 AC_PREREQ(2.52)
 
-AC_INIT([fetch], [1.6], [joerg@NetBSD.org])
-dnl AC_INIT([libfetch], [2.0], [joerg@NetBSD.org])
+AC_INIT([fetch], [1.9], [joerg@NetBSD.org])
+dnl AC_INIT([libfetch], [2.40], [joerg@NetBSD.org])
 
 AC_CONFIG_HEADERS(config.h)
 AC_CANONICAL_HOST
@@ -25,9 +25,7 @@ AS_IF([test "x$ac_cv_lib_crypto_X509_get_issuer_name" = xyes], [
 
 AS_CASE([$host],
 	[*netbsd*],
-		AC_DEFINE([PREFER_GETPASS], [], [getpass supports long passwords]),
-	[*linux*|*gnu*|*kfreebsd*],
-		AC_DEFINE([_GNU_SOURCE], [], [enable _GNU_SOURCE])
+		AC_DEFINE([PREFER_GETPASS], [], [getpass supports long passwords])
 )
 
 AC_DEFINE([INET6], [], [enable INET6])

@@ -1,17 +1,17 @@
 CC=			@CC@
-CFLAGS=		-Wall -Wno-unused-result -I. @CFLAGS@
+CFLAGS=		-Wall -Wno-unused-result -I. -Iinc -Ilibfetch @CFLAGS@
 CPPFLAGS=	@CPPFLAGS@ -DHAVE_CONFIG_H
 LDFLAGS=	@LDFLAGS@
 LIBS=		@LIBS@
 
-OBJS=		fetch.o common.o ftp.o http.o file.o main.o
-PROG=		fetch
+OBJS=		libfetch/fetch.o libfetch/common.o libfetch/ftp.o libfetch/http.o libfetch/file.o fetch/fetch.o
+PROG=		fetch/fetch
 
 
 all: $(PROG)
 
 clean:
-	-rm -f *.o $(PROG) ftperr.h httperr.h
+	-rm -f $(OBJS) $(PROG) ftperr.h httperr.h
 
 distclean: clean
 	-rm -f Makefile config.log config.status config.h
@@ -23,12 +23,12 @@ maintainer-clean: distclean
 $(PROG): $(OBJS)
 	$(CC) -o $(PROG) $^ $(LDFLAGS) $(LIBS)
 
-ftp.o: ftperr.h
-http.o: httperr.h
+libfetch/ftp.o: ftperr.h
+libfetch/http.o: httperr.h
 
 ftperr.h:
-	$(SHELL) errlist.sh ftp_errlist FTP ftp.errors > $@
+	$(SHELL) libfetch/errlist.sh ftp_errlist FTP libfetch/ftp.errors > $@
 
 httperr.h:
-	$(SHELL) errlist.sh http_errlist HTTP http.errors > $@
+	$(SHELL) libfetch/errlist.sh http_errlist HTTP libfetch/http.errors > $@
 

@@ -1,6 +1,6 @@
 /*	$NetBSD: file.c,v 1.15 2009/10/15 12:36:57 joerg Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
+ * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
  * Copyright (c) 2008, 2009 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -33,9 +33,9 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-//#ifndef NETBSD
-//#include <nbcompat.h>
-//#endif
+#ifndef NETBSD
+#include <nbcompat.h>
+#endif
 
 #include <sys/stat.h>
 

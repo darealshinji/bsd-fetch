@@ -1,7 +1,7 @@
 *.o
 *~
 
-fetch
+/fetch/fetch
 ftperr.h
 httperr.h
 

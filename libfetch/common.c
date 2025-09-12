@@ -1,6 +1,6 @@
 /*	$NetBSD: common.c,v 1.32 2024/01/03 03:54:46 riastradh Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
+ * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
  * Copyright (c) 2008, 2010 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -33,9 +33,9 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-//#ifndef NETBSD
-//#include <nbcompat.h>
-//#endif
+#ifndef NETBSD
+#include <nbcompat.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -54,11 +54,11 @@
 #if defined(HAVE_INTTYPES_H) || defined(NETBSD)
 #include <inttypes.h>
 #endif
-//#ifndef NETBSD
-//#include <nbcompat/netdb.h>
-//#else
+#ifndef NETBSD
+#include <nbcompat/netdb.h>
+#else
 #include <netdb.h>
-//#endif
+#endif
 #include <pwd.h>
 #include <stdarg.h>
 #include <stdlib.h>

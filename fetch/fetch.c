@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2000-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
+ * Copyright (c) 2000-2004 Dag-Erling Coïdan Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,9 +29,9 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-//#ifndef NETBSD
-//#include <nbcompat.h>
-//#endif
+#ifndef NETBSD
+#include <nbcompat.h>
+#endif
 
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -204,7 +204,7 @@ stat_bytes(off_t bytes)
 static const char *
 stat_bps(struct xferstat *xs)
 {
-	static char str[128];
+	static char str[48];
 	double delta, bps;
 
 	delta = (xs->last.tv_sec + (xs->last.tv_usec / 1.e6))

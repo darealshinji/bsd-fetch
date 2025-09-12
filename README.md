@@ -8,4 +8,3 @@ Build dependencies are libssl, autotools and GNU make: `apt install libssl-dev a
 [def2]: https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc.tar.xz
 [def3]: https://www.pkgsrc.se/net/fetch
 [def4]: https://www.pkgsrc.se/net/libfetch
-[def5]: https://www.pkgsrc.se/pkgtools/libnbcompat

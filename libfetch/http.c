@@ -1,6 +1,6 @@
-/*	$NetBSD: http.c,v 1.42 2022/08/23 17:48:53 wiz Exp $	*/
+/*	$NetBSD: http.c,v 1.44 2025/04/28 18:48:36 tnn Exp $	*/
 /*-
- * Copyright (c) 2000-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
+ * Copyright (c) 2000-2004 Dag-Erling Coïdan Smørgrav
  * Copyright (c) 2003 Thomas Klausner <wiz@NetBSD.org>
  * Copyright (c) 2008, 2009 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
@@ -63,14 +63,14 @@
  * SUCH DAMAGE.
  */
 
-//#if defined(__linux__) || defined(__MINT__) || defined(__FreeBSD_kernel__)
+#if defined(__linux__) || defined(__MINT__) || defined(__FreeBSD_kernel__)
 /* Keep this down to Linux or MiNT, it can create surprises elsewhere. */
 /*
    __FreeBSD_kernel__ is defined for GNU/kFreeBSD.
    See http://glibc-bsd.alioth.debian.org/porting/PORTING .
 */
-//#define _GNU_SOURCE
-//#endif
+#define _GNU_SOURCE
+#endif
 
 /* Needed for gmtime_r on Interix */
 #define _REENTRANT
@@ -78,9 +78,9 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-//#ifndef NETBSD
-//#include <nbcompat.h>
-//#endif
+#ifndef NETBSD
+#include <nbcompat.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -89,24 +89,27 @@
 #include <errno.h>
 #include <locale.h>
 #include <stdarg.h>
-//#ifndef NETBSD
-//#include <nbcompat/stdio.h>
-//#else
+#ifndef NETBSD
+#include <nbcompat/stdio.h>
+#else
 #include <stdio.h>
-//#endif
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(__APPLE__)
+#include <xlocale.h>	/* for strptime_l */
+#endif
 #include <unistd.h>
 
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-//#ifndef NETBSD
-//#include <nbcompat/netdb.h>
-//#else
+#ifndef NETBSD
+#include <nbcompat/netdb.h>
+#else
 #include <netdb.h>
-//#endif
+#endif
 
 #include <arpa/inet.h>
 
@@ -493,6 +496,16 @@ http_match(const char *str, const char *hdr)
 	return (hdr);
 }
 
+/* Remove whitespace at the end of the buffer */
+static void
+http_conn_trimright(conn_t *conn)
+{
+	while (conn->buflen &&
+	    isspace((unsigned char)conn->buf[conn->buflen - 1]))
+		conn->buflen--;
+	conn->buf[conn->buflen] = '\0';
+}
+
 /*
  * Get the next header and return the appropriate symbolic code.
  */
@@ -501,13 +514,20 @@ http_next_header(conn_t *conn, const char **p)
 {
 	int i;
 
-	if (fetch_getln(conn) == -1)
-		return (hdr_syserror);
-	while (conn->buflen && isspace((unsigned char)conn->buf[conn->buflen - 1]))
-		conn->buflen--;
-	conn->buf[conn->buflen] = '\0';
+	/*
+	 * Have to do the stripping here because of the first line. So
+	 * it's done twice for the subsequent lines. No big deal
+	 */
+	http_conn_trimright(conn);
+
 	if (conn->buflen == 0)
 		return (hdr_end);
+
+	if (fetch_getln(conn) == -1)
+		return (hdr_syserror);
+
+	http_conn_trimright(conn);
+
 	/*
 	 * We could check for malformed headers but we don't really care.
 	 * A valid header starts with a token immediately followed by a
@@ -780,7 +800,7 @@ http_connect(struct url *URL, struct url *purl, const char *flags, int *cached)
 			default:
 				/* ignore */ ;
 			}
-		} while (h < hdr_end);
+		} while (h > hdr_end);
 	}
 	if (strcasecmp(URL->scheme, SCHEME_HTTPS) == 0 &&
 	    fetch_ssl(conn, URL, verbose) == -1) {

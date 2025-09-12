@@ -1,6 +1,6 @@
-/*	$NetBSD: ftp.c,v 1.47 2019/02/11 10:34:36 wiz Exp $	*/
+/*	$NetBSD: ftp.c,v 1.49 2025/05/29 15:07:08 wiz Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
+ * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
  * Copyright (c) 2008, 2009, 2010 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -42,7 +42,7 @@
  *
  * Major Changelog:
  *
- * Dag-Erling CoÃ¯dan SmÃ¸rgrav
+ * Dag-Erling Coïdan Smørgrav
  * 9 Jun 1998
  *
  * Incorporated into libfetch
@@ -57,17 +57,17 @@
  *
  */
 
-//#ifdef __linux__
+#ifdef __linux__
 /* Keep this down to Linux, it can create surprises else where. */
-//#define _GNU_SOURCE
-//#endif
+#define _GNU_SOURCE
+#endif
 
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-//#ifndef NETBSD
-//#include <nbcompat.h>
-//#endif
+#ifndef NETBSD
+#include <nbcompat.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -82,13 +82,13 @@
 #include <inttypes.h>
 #endif
 #include <stdarg.h>
-//#ifndef NETBSD
-//#include <nbcompat/netdb.h>
-//#include <nbcompat/stdio.h>
-//#else
+#ifndef NETBSD
+#include <nbcompat/netdb.h>
+#include <nbcompat/stdio.h>
+#else
 #include <netdb.h>
 #include <stdio.h>
-//#endif
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -859,7 +859,9 @@ retry_mode:
 		int low = CHECK_FLAG('l');
 #endif
 		int d;
+#ifdef INET6
 		char hname[INET6_ADDRSTRLEN];
+#endif
 
 		switch (u.ss.ss_family) {
 		case AF_INET6:
@@ -900,6 +902,7 @@ retry_mode:
 			    (a >> 8) & 0xff, a & 0xff,
 			    (p >> 8) & 0xff, p & 0xff);
 			break;
+#ifdef INET6
 		case AF_INET6:
 			e = -1;
 			u.sin6.sin6_scope_id = 0;
@@ -929,6 +932,7 @@ retry_mode:
 				    2, port >> 8, port & 0xff);
 			}
 			break;
+#endif
 		default:
 			e = FTP_PROTOCOL_ERROR; /* XXX: error code should be prepared */
 			goto ouch;
