@@ -1,6 +1,6 @@
-/*	$NetBSD: ftp.c,v 1.49 2025/05/29 15:07:08 wiz Exp $	*/
+/*	$NetBSD: ftp.c,v 1.55 2026/04/16 10:15:39 wiz Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * Copyright (c) 2008, 2009, 2010 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -42,7 +42,7 @@
  *
  * Major Changelog:
  *
- * Dag-Erling Coïdan Smørgrav
+ * Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * 9 Jun 1998
  *
  * Incorporated into libfetch
@@ -145,7 +145,7 @@ unmappedaddr(struct sockaddr_in6 *sin6, socklen_t *len)
 	if (sin6->sin6_family != AF_INET6 ||
 	    !IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr))
 		return;
-	sin4 = (struct sockaddr_in *)sin6;
+	sin4 = (struct sockaddr_in *)(void *)sin6;
 #ifdef s6_addr32
 	addr = sin6->sin6_addr.s6_addr32[3];
 #else
@@ -208,7 +208,7 @@ ftp_cmd(conn_t *conn, const char *fmt, ...)
 	va_list ap;
 	size_t len;
 	char *msg;
-	int r;
+	ssize_t r;
 
 	va_start(ap, fmt);
 	len = vasprintf(&msg, fmt, ap);
@@ -235,7 +235,7 @@ ftp_cmd(conn_t *conn, const char *fmt, ...)
  * Return a pointer to the filename part of a path
  */
 static const char *
-ftp_filename(const char *file, int *len, int *type, int subdir)
+ftp_filename(const char *file, size_t *len, int *type, int subdir)
 {
 	const char *s;
 
@@ -262,6 +262,7 @@ ftp_pwd(conn_t *conn, char **pwd)
 {
 	char *src, *dst, *end;
 	int q;
+	size_t len;
 
 	if (conn->err != FTP_WORKING_DIRECTORY &&
 	    conn->err != FTP_FILE_ACTION_OK)
@@ -270,7 +271,8 @@ ftp_pwd(conn_t *conn, char **pwd)
 	src = conn->buf + 4;
 	if (src >= end || *src++ != '"')
 		return (FTP_PROTOCOL_ERROR);
-	*pwd = malloc(end - src + 1);
+	len = end - src + 1;
+	*pwd = malloc(len);
 	if (*pwd == NULL)
 		return (FTP_PROTOCOL_ERROR);
 	for (q = 0, dst = *pwd; src < end; ++src) {
@@ -301,7 +303,8 @@ ftp_cwd(conn_t *conn, const char *path, int subdir)
 {
 	const char *beg, *end;
 	char *pwd, *dst;
-	int e, i, len;
+	int e;
+	size_t i, len;
 
 	if (*path != '/') {
 		ftp_seterr(501);
@@ -349,7 +352,7 @@ ftp_cwd(conn_t *conn, const char *path, int subdir)
 		len = strlen(pwd);
 
 		/* Look for a common prefix between PWD and dir to fetch. */
-		for (i = 0; i <= len && i <= end - dst; ++i)
+		for (i = 0; i <= len && i <= (size_t)(end - dst); ++i)
 			if (pwd[i] != dst[i])
 				break;
 		/* Keep going up a dir until we have a matching prefix. */
@@ -416,6 +419,7 @@ ftp_mode_type(conn_t *conn, int mode, int type)
 	case 0:
 	case 's':
 		mode = 'S';
+		/*FALLTHROUGH*/
 	case 'S':
 		break;
 	default:
@@ -444,15 +448,17 @@ ftp_mode_type(conn_t *conn, int mode, int type)
 	case 0:
 	case 'i':
 		type = 'I';
+		/*FALLTHROUGH*/
 	case 'I':
 		break;
 	case 'a':
 		type = 'A';
+		/*FALLTHROUGH*/
 	case 'A':
 		break;
 	case 'd':
 		type = 'D';
-		/* FALLTHROUGH */
+		/*FALLTHROUGH*/
 	case 'D':
 		/* can't handle yet */
 	default:
@@ -472,7 +478,8 @@ ftp_stat(conn_t *conn, const char *file, struct url_stat *us)
 {
 	char *ln;
 	const char *filename;
-	int filenamelen, type, year;
+	size_t filenamelen;
+	int type;
 	struct tm tm;
 	time_t t;
 	int e;
@@ -524,13 +531,13 @@ ftp_stat(conn_t *conn, const char *file, struct url_stat *us)
 		return (-1);
 	}
 	if (sscanf(ln, "%04d%02d%02d%02d%02d%02d",
-	    &year, &tm.tm_mon, &tm.tm_mday,
+	    &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
 	    &tm.tm_hour, &tm.tm_min, &tm.tm_sec) != 6) {
 		ftp_seterr(FTP_PROTOCOL_ERROR);
 		return (-1);
 	}
 	tm.tm_mon--;
-	tm.tm_year = year - 1900;
+	tm.tm_year -= 1900;
 	tm.tm_isdst = -1;
 	t = timegm(&tm);
 	if (t == (time_t)-1)
@@ -560,7 +567,7 @@ static ssize_t
 ftp_readfn(void *v, void *buf, size_t len)
 {
 	struct ftpio *io;
-	int r;
+	ssize_t r;
 
 	io = (struct ftpio *)v;
 	if (io == NULL) {
@@ -593,7 +600,7 @@ static ssize_t
 ftp_writefn(void *v, const void *buf, size_t len)
 {
 	struct ftpio *io;
-	int w;
+	ssize_t w;
 
 	io = (struct ftpio *)v;
 	if (io == NULL) {
@@ -642,7 +649,7 @@ ftp_closefn(void *v)
 	fetch_close(io->dconn);
 	io->dconn = NULL;
 	io->dir = -1;
-	ftp_chkerr(io->cconn);
+	(void)ftp_chkerr(io->cconn);
 	fetch_cache_put(io->cconn, ftp_disconnect);
 	free(io);
 	return;
@@ -683,7 +690,8 @@ ftp_transfer(conn_t *conn, const char *oper, const char *file, const char *op_ar
 	} u;
 	const char *bindaddr;
 	const char *filename;
-	int filenamelen, type;
+	size_t filenamelen;
+	int type;
 	int pasv, verbose;
 	int e, sd = -1;
 	socklen_t l;
@@ -765,7 +773,7 @@ retry_mode:
 			}
 			l = (e == FTP_PASSIVE_MODE ? 6 : 21);
 			for (i = 0; *p && i < l; i++, p++)
-				addr[i] = strtol(p, &p, 10);
+				addr[i] = (unsigned char)strtol(p, &p, 10);
 			if (i < l) {
 				e = FTP_PROTOCOL_ERROR;
 				goto ouch;
@@ -859,9 +867,7 @@ retry_mode:
 		int low = CHECK_FLAG('l');
 #endif
 		int d;
-#ifdef INET6
 		char hname[INET6_ADDRSTRLEN];
-#endif
 
 		switch (u.ss.ss_family) {
 		case AF_INET6:
@@ -869,7 +875,7 @@ retry_mode:
 #ifdef IPV6_PORTRANGE
 			arg = low ? IPV6_PORTRANGE_DEFAULT : IPV6_PORTRANGE_HIGH;
 			if (setsockopt(sd, IPPROTO_IPV6, IPV6_PORTRANGE,
-				(char *)&arg, sizeof(arg)) == -1)
+				&arg, (socklen_t)sizeof(arg)) == -1)
 				goto sysouch;
 #endif
 			break;
@@ -878,7 +884,7 @@ retry_mode:
 #ifdef IP_PORTRANGE
 			arg = low ? IP_PORTRANGE_DEFAULT : IP_PORTRANGE_HIGH;
 			if (setsockopt(sd, IPPROTO_IP, IP_PORTRANGE,
-				(char *)&arg, sizeof(arg)) == -1)
+				&arg, (socklen_t)sizeof(arg)) == -1)
 				goto sysouch;
 #endif
 			break;
@@ -900,14 +906,13 @@ retry_mode:
 			e = ftp_cmd(conn, "PORT %d,%d,%d,%d,%d,%d\r\n",
 			    (a >> 24) & 0xff, (a >> 16) & 0xff,
 			    (a >> 8) & 0xff, a & 0xff,
-			    (p >> 8) & 0xff, p & 0xff);
+			    ((unsigned int)p >> 8) & 0xff, p & 0xff);
 			break;
-#ifdef INET6
 		case AF_INET6:
 			e = -1;
 			u.sin6.sin6_scope_id = 0;
 			if (getnameinfo(&u.sa, l,
-				hname, sizeof(hname),
+				hname, (socklen_t)sizeof(hname),
 				NULL, 0, NI_NUMERICHOST) == 0) {
 				e = ftp_cmd(conn, "EPRT |%d|%s|%d|\r\n", 2, hname,
 				    htons(u.sin6.sin6_port));
@@ -915,24 +920,20 @@ retry_mode:
 					goto ouch;
 			}
 			if (e != FTP_OK) {
-				unsigned char *ap = (void *)&u.sin6.sin6_addr.s6_addr;
-				uint16_t port = ntohs(u.sin6.sin6_port);
+				uint8_t aa[sizeof(u.sin6.sin6_addr)];
+				memcpy(aa, &u.sin6.sin6_addr, sizeof(aa));
+				p = ntohs(u.sin6.sin6_port);
 				e = ftp_cmd(conn,
-				    "LPRT %d,%d,%u,%u,%u,%u,%u,%u,%u,%u,"
-				    "%u,%u,%u,%u,%u,%u,%u,%u,%d,%d,%d\r\n",
+				    "LPRT %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",
 				    6, 16,
-				    (unsigned)ap[0], (unsigned)ap[1],
-				    (unsigned)ap[2], (unsigned)ap[3],
-				    (unsigned)ap[4], (unsigned)ap[5],
-				    (unsigned)ap[6], (unsigned)ap[7],
-				    (unsigned)ap[8], (unsigned)ap[9],
-				    (unsigned)ap[10], (unsigned)ap[11],
-				    (unsigned)ap[12], (unsigned)ap[13],
-				    (unsigned)ap[14], (unsigned)ap[15],
-				    2, port >> 8, port & 0xff);
+				    aa[ 0], aa[ 1], aa[ 2], aa[ 3],
+				    aa[ 4], aa[ 5], aa[ 6], aa[ 7],
+				    aa[ 8], aa[ 9], aa[10], aa[11],
+				    aa[12], aa[13], aa[14], aa[15],
+				    2,
+				    ((unsigned int)p >> 8) & 0xff, p & 0xff);
 			}
 			break;
-#endif
 		default:
 			e = FTP_PROTOCOL_ERROR; /* XXX: error code should be prepared */
 			goto ouch;
@@ -1116,6 +1117,7 @@ ftp_get_proxy(struct url * url, const char *flags)
 		return (NULL);
 	if (fetch_no_proxy_match(url->host))
 		return (NULL);
+
 	if (((p = getenv("FTP_PROXY")) || (p = getenv("ftp_proxy")) ||
 		(p = getenv("HTTP_PROXY")) || (p = getenv("http_proxy"))) &&
 	    *p && (purl = fetchParseURL(p)) != NULL) {

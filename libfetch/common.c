@@ -1,6 +1,6 @@
-/*	$NetBSD: common.c,v 1.32 2024/01/03 03:54:46 riastradh Exp $	*/
+/*	$NetBSD: common.c,v 1.38 2026/04/16 10:34:47 wiz Exp $	*/
 /*-
- * Copyright (c) 1998-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 1998-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * Copyright (c) 2008, 2010 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
  *
@@ -374,7 +374,9 @@ fetch_cache_get(const struct url *url, int af)
 {
 	conn_t *conn, *last_conn = NULL;
 
-	for (conn = connection_cache; conn; conn = conn->next_cached) {
+	for (conn = connection_cache; conn; last_conn = conn,
+	    conn = conn->next_cached)
+	{
 		if (conn->cache_url->port == url->port &&
 		    strcmp(conn->cache_url->scheme, url->scheme) == 0 &&
 		    strcmp(conn->cache_url->host, url->host) == 0 &&
@@ -401,8 +403,8 @@ fetch_cache_get(const struct url *url, int af)
 void
 fetch_cache_put(conn_t *conn, int (*closecb)(conn_t *))
 {
-	conn_t *iter, *last;
-	int global_count, host_count;
+	conn_t *iter, *last, *oiter;
+	int global_count, host_count, added;
 
 	if (conn->cache_url == NULL || cache_global_limit == 0) {
 		(*closecb)(conn);
@@ -411,20 +413,28 @@ fetch_cache_put(conn_t *conn, int (*closecb)(conn_t *))
 
 	global_count = host_count = 0;
 	last = NULL;
-	for (iter = connection_cache; iter;
-	    last = iter, iter = iter->next_cached) {
+	for (iter = connection_cache; iter; ) {
 		++global_count;
-		if (strcmp(conn->cache_url->host, iter->cache_url->host) == 0)
+		added = !strcmp(conn->cache_url->host, iter->cache_url->host);
+		if (added)
 			++host_count;
 		if (global_count < cache_global_limit &&
-		    host_count < cache_per_host_limit)
-			continue;
-		--global_count;
-		if (last != NULL)
-			last->next_cached = iter->next_cached;
-		else
-			connection_cache = iter->next_cached;
-		(*iter->cache_close)(iter);
+		    host_count < cache_per_host_limit) {
+			oiter = NULL;
+			last = iter;
+		} else {
+			--global_count;
+			if (added)
+				--host_count;
+			if (last != NULL)
+				last->next_cached = iter->next_cached;
+			else
+				connection_cache = iter->next_cached;
+			oiter = iter;
+		}
+		iter = iter->next_cached;
+		if (oiter)
+			(*oiter->cache_close)(oiter);
 	}
 
 	conn->cache_close = closecb;
@@ -631,7 +641,7 @@ fetch_getln(conn_t *conn)
 			return (-1);
 		if (len == 0)
 			break;
-		next = memchr(conn->buf + conn->buflen, '\n', len);
+		next = memchr(conn->buf + conn->buflen, '\n', (size_t)len);
 		conn->buflen += len;
 		if (conn->buflen == conn->bufsize && next == NULL) {
 			tmp = conn->buf;
@@ -717,7 +727,7 @@ fetch_write(conn_t *conn, const void *buf, size_t len)
 		errno = 0;
 #ifdef WITH_SSL
 		if (conn->ssl != NULL)
-			wlen = SSL_write(conn->ssl, buf, len);
+			wlen = SSL_write(conn->ssl, buf, (int)len);
 		else
 #endif
 #ifndef MSG_NOSIGNAL
@@ -752,6 +762,22 @@ fetch_close(conn_t *conn)
 {
 	int ret;
 
+#ifdef WITH_SSL
+	if (conn->ssl) {
+		SSL_shutdown(conn->ssl);
+		SSL_set_connect_state(conn->ssl);
+		SSL_free(conn->ssl);
+		conn->ssl = NULL;
+	}
+	if (conn->ssl_ctx) {
+		SSL_CTX_free(conn->ssl_ctx);
+		conn->ssl_ctx = NULL;
+	}
+	if (conn->ssl_cert) {
+		X509_free(conn->ssl_cert);
+		conn->ssl_cert = NULL;
+	}
+#endif
 	ret = close(conn->sd);
 	if (conn->cache_url)
 		fetchFreeURL(conn->cache_url);

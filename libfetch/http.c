@@ -1,6 +1,6 @@
-/*	$NetBSD: http.c,v 1.44 2025/04/28 18:48:36 tnn Exp $	*/
+/*	$NetBSD: http.c,v 1.48 2026/04/16 10:15:06 wiz Exp $	*/
 /*-
- * Copyright (c) 2000-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2000-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * Copyright (c) 2003 Thomas Klausner <wiz@NetBSD.org>
  * Copyright (c) 2008, 2009 Joerg Sonnenberger <joerg@NetBSD.org>
  * All rights reserved.
@@ -154,7 +154,7 @@ struct httpio
 	char		*buf;		/* chunk buffer */
 	size_t		 bufsize;	/* size of chunk buffer */
 	ssize_t		 buflen;	/* amount of data currently in buffer */
-	int		 bufpos;	/* current read offset in buffer */
+	size_t		 bufpos;	/* current read offset in buffer */
 	int		 eof;		/* end-of-file flag */
 	int		 error;		/* error flag */
 	size_t		 chunksize;	/* remaining size of current chunk */
@@ -164,7 +164,7 @@ struct httpio
 /*
  * Get next chunk header
  */
-static int
+static ssize_t
 http_new_chunk(struct httpio *io)
 {
 	char *p;
@@ -213,7 +213,7 @@ http_growbuf(struct httpio *io, size_t len)
 /*
  * Fill the input buffer, do chunk decoding on the fly
  */
-static int
+static ssize_t
 http_fillbuf(struct httpio *io, size_t len)
 {
 	if (io->error)
@@ -294,7 +294,7 @@ http_readfn(void *v, void *buf, size_t len)
 
 	for (pos = 0; len > 0; pos += l, len -= l) {
 		/* empty buffer */
-		if (!io->buf || io->bufpos == io->buflen)
+		if (!io->buf || (ssize_t)io->bufpos == io->buflen)
 			if (http_fillbuf(io, len) < 1)
 				break;
 		l = io->buflen - io->bufpos;
@@ -333,7 +333,7 @@ http_closefn(void *v)
 
 		val = 0;
 		setsockopt(io->conn->sd, IPPROTO_TCP, TCP_NODELAY, &val,
-			   sizeof(val));
+			   (socklen_t)sizeof(val));
 			  fetch_cache_put(io->conn, fetch_close);
 #if defined(TCP_NOPUSH) && !defined(__APPLE__)
 		val = 1;
@@ -419,7 +419,7 @@ http_cmd(conn_t *conn, const char *fmt, ...)
 	va_list ap;
 	size_t len;
 	char *msg;
-	int r;
+	ssize_t r;
 
 	va_start(ap, fmt);
 	len = vasprintf(&msg, fmt, ap);
@@ -765,8 +765,15 @@ http_connect(struct url *URL, struct url *purl, const char *flags, int *cached)
 #endif
 
 	curl = (purl != NULL) ? purl : URL;
+	if (purl && strcasecmp(URL->scheme, SCHEME_HTTPS) != 0) {
+		URL = purl;
+	} else if (strcasecmp(URL->scheme, SCHEME_FTP) == 0) {
+		/* can't talk http to an ftp server */
+		/* XXX should set an error code */
+		return (NULL);
+	}
 
-	if ((conn = fetch_cache_get(URL, af)) != NULL) {
+	if ((conn = fetch_cache_get(curl, af)) != NULL) {
 		*cached = 1;
 		return (conn);
 	}
@@ -779,16 +786,18 @@ http_connect(struct url *URL, struct url *purl, const char *flags, int *cached)
 				URL->host, URL->port);
 		http_cmd(conn, "Host: %s:%d\r\n",
 				URL->host, URL->port);
+		/* proxy authorization */
+		if (*purl->user || *purl->pwd)
+			http_basic_auth(conn, "Proxy-Authorization",
+			    purl->user, purl->pwd);
+		else if ((p = getenv("HTTP_PROXY_AUTH")) != NULL && *p != '\0')
+			http_authorize(conn, "Proxy-Authorization", p);
 		http_cmd(conn, "\r\n");
 		if (http_get_reply(conn) != HTTP_OK) {
 			http_seterr(conn->err);
 			goto ouch;
 		}
-		/* Read and discard the rest of the proxy response */
-		if (fetch_getln(conn) < 0) {
-			fetch_syserr();
-			goto ouch;
-		}
+		/* Read and discard the rest of the proxy response (if any) */
 		do {
 			switch ((h = http_next_header(conn, &p))) {
 			case hdr_syserror:
@@ -1021,7 +1030,7 @@ http_request(struct url *URL, const char *op, struct url_stat *us,
 #endif
 		val = 1;
 		setsockopt(conn->sd, IPPROTO_TCP, TCP_NODELAY, &val,
-			   sizeof(val));
+		    (socklen_t)sizeof(val));
 
 		/* get reply */
 		switch (http_get_reply(conn)) {
