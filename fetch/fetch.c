@@ -101,7 +101,7 @@ int	 o_flag;	/*    -o: specify output file */
 int	 o_directory;	/*        output file is a directory */
 char	*o_filename;	/*        name of output file */
 int	 o_stdout;	/*        output file is stdout */
-int	 once_flag;	/*    -1: stop at first successful file */
+int	 xonce_flag;	/*    -1: stop at first successful file */
 int	 R_flag;	/*    -R: don't delete partially transferred files */
 int	 r_flag;	/*    -r: restart previously interrupted transfer */
 off_t	 S_size;        /*    -S: require size to match */
@@ -856,7 +856,7 @@ main(int argc, char *argv[])
 	    "146AaB:dFilMmN:no:qRrS:sT:Uvw:")) != -1)
 		switch (c) {
 		case '1':
-			once_flag = 1;
+			xonce_flag = 1;
 			break;
 		case '4':
 			family = PF_INET;
@@ -1049,7 +1049,7 @@ main(int argc, char *argv[])
 		if (sigint)
 			kill(getpid(), SIGINT);
 
-		if (e == 0 && once_flag)
+		if (e == 0 && xonce_flag)
 			exit(0);
 
 		if (e) {

@@ -1,8 +1,18 @@
 Use larger buffers to prevent truncation.
+Rename "once_flag" to avoid clashes with a Linux header typedef of the same name.
 
 --- a/fetch/fetch.c
 +++ b/fetch/fetch.c
-@@ -163,7 +163,7 @@ struct xferstat {
+@@ -101,7 +101,7 @@
+ int	 o_directory;	/*        output file is a directory */
+ char	*o_filename;	/*        name of output file */
+ int	 o_stdout;	/*        output file is stdout */
+-int	 once_flag;	/*    -1: stop at first successful file */
++int	 xonce_flag;	/*    -1: stop at first successful file */
+ int	 R_flag;	/*    -R: don't delete partially transferred files */
+ int	 r_flag;	/*    -r: restart previously interrupted transfer */
+ off_t	 S_size;        /*    -S: require size to match */
+@@ -163,7 +163,7 @@
  static const char *
  stat_eta(struct xferstat *xs)
  {
@@ -11,7 +21,7 @@ Use larger buffers to prevent truncation.
  	long elapsed, eta;
  	off_t received, expected;
  
-@@ -187,7 +187,7 @@ static const char *prefixes = " kMGTP";
+@@ -187,7 +187,7 @@
  static const char *
  stat_bytes(off_t bytes)
  {
@@ -20,7 +30,7 @@ Use larger buffers to prevent truncation.
  	const char *prefix = prefixes;
  
  	while (bytes > 9999 && prefix[1] != '\0') {
-@@ -204,7 +204,7 @@ stat_bytes(off_t bytes)
+@@ -204,7 +204,7 @@
  static const char *
  stat_bps(struct xferstat *xs)
  {
@@ -29,3 +39,21 @@ Use larger buffers to prevent truncation.
  	double delta, bps;
  
  	delta = (xs->last.tv_sec + (xs->last.tv_usec / 1.e6))
+@@ -856,7 +856,7 @@
+ 	    "146AaB:dFilMmN:no:qRrS:sT:Uvw:")) != -1)
+ 		switch (c) {
+ 		case '1':
+-			once_flag = 1;
++			xonce_flag = 1;
+ 			break;
+ 		case '4':
+ 			family = PF_INET;
+@@ -1049,7 +1049,7 @@
+ 		if (sigint)
+ 			kill(getpid(), SIGINT);
+ 
+-		if (e == 0 && once_flag)
++		if (e == 0 && xonce_flag)
+ 			exit(0);
+ 
+ 		if (e) {
