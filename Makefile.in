@@ -1,5 +1,5 @@
 CC=			@CC@
-CFLAGS=		-Wall -Wno-unused-result -I. -Iinc -Ilibfetch @CFLAGS@
+CFLAGS=		-Wall -I. -Iinc -Ilibfetch @CFLAGS@
 CPPFLAGS=	@CPPFLAGS@ -DHAVE_CONFIG_H
 LDFLAGS=	@LDFLAGS@
 LIBS=		@LIBS@

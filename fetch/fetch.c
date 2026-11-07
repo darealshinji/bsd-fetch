@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2000-2004 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2000-2004 Dag-Erling CoÃ¯dan SmÃ¸rgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -663,8 +663,7 @@ fetch(char *URL, const char *path)
 
 		/* construct a temp file name */
 		if (sb.st_size != -1 && S_ISREG(sb.st_mode)) {
-			asprintf(&tmppath, "%s.fetch.XXXXXX", path);
-			if (tmppath != NULL) {
+			if (asprintf(&tmppath, "%s.fetch.XXXXXX", path) != -1) {
 				int fd;
 
 				fd = mkstemp(tmppath);
@@ -1031,14 +1030,16 @@ main(int argc, char *argv[])
 			p = "fetch.out";
 
 		fetchLastErrCode = 0;
+		e = 0;
 
 		if (o_flag) {
 			if (o_stdout) {
 				e = fetch(*argv, "-");
 			} else if (o_directory) {
-				asprintf(&q, "%s/%s", o_filename, p);
-				e = fetch(*argv, q);
-				free(q);
+				if (asprintf(&q, "%s/%s", o_filename, p) != -1) {
+					e = fetch(*argv, q);
+					free(q);
+				}
 			} else {
 				e = fetch(*argv, o_filename);
 			}

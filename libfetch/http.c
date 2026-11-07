@@ -1350,7 +1350,7 @@ struct index_parser {
 };
 
 static ssize_t
-parse_index(struct index_parser *parser, const char *buf, size_t len)
+parse_index(struct index_parser *parser, char *buf, size_t len)
 {
 	char *end_attr, p = *buf;
 

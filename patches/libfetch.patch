@@ -1,0 +1,24 @@
+Set correct const qualifiers.
+
+--- a/libfetch/common.c
++++ b/libfetch/common.c
+@@ -488,7 +488,7 @@ fetch_ssl(conn_t *conn, const struct url *URL, int verbose)
+ 	}
+ 
+ 	if (verbose) {
+-		X509_NAME *name;
++		const X509_NAME *name;
+ 		char *str;
+ 
+ 		fprintf(stderr, "SSL connection established using %s\n",
+--- a/libfetch/http.c
++++ b/libfetch/http.c
+@@ -1350,7 +1350,7 @@ struct index_parser {
+ };
+ 
+ static ssize_t
+-parse_index(struct index_parser *parser, const char *buf, size_t len)
++parse_index(struct index_parser *parser, char *buf, size_t len)
+ {
+ 	char *end_attr, p = *buf;
+ 
